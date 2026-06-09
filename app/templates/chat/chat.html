@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Chat — LSAT Tutor{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+  <div class="chat-thread" id="chatThread">
+    <div class="chat-message chat-message--system">
+      Welcome! Paste an LSAT question, share your answer, or describe what you're struggling with.
+      I'll give you a structured breakdown of how to think through it.
+    </div>
+  </div>
+
+  <form class="chat-form" id="chatForm">
+    <textarea
+      class="chat-input"
+      id="chatInput"
+      name="message"
+      placeholder="Paste an LSAT question or describe what you need help with..."
+      rows="3"
+      required
+    ></textarea>
+    <button class="btn btn--primary" type="submit" id="sendBtn">Send</button>
+  </form>
+
+  <form method="POST" action="{{ url_for('chat.clear_history') }}" class="chat-clear">
+    <button class="btn btn--ghost" type="submit">Clear History</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

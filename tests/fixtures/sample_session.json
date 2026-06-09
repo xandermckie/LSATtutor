@@ -1,0 +1,8 @@
+{
+  "turns": [
+    {"role": "user", "content": "Which of the following most weakens the argument?"},
+    {"role": "assistant", "content": "**Question Type:** Logical Reasoning\n**Core Skill Being Tested:** Weaken\n**Step-by-Step Reasoning Strategy:**\n1. Find the conclusion.\n2. Find the assumption.\n3. Pick the answer that attacks the assumption.\n**Common Trap:** Choosing an answer that is true but doesn't affect the argument's logic.\n**Memory Cue:** Assumption Attack."}
+  ],
+  "summary": "",
+  "weak_areas": {"Weaken": 2, "Assumption": 1}
+}

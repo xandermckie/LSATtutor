@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Quiz — LSAT Tutor{% endblock %}
+
+{% block content %}
+<div class="page quiz">
+  <h1 class="page__title">Practice Quiz</h1>
+
+  {% if question %}
+    <div class="quiz-card">
+      <p class="quiz-card__type">{{ question.type }}</p>
+      <p class="quiz-card__stimulus">{{ question.stimulus }}</p>
+      <p class="quiz-card__question"><strong>{{ question.question }}</strong></p>
+
+      {% if result %}
+        <div class="quiz-choices quiz-choices--revealed">
+          {% for letter, text in question.choices.items() %}
+            <div class="quiz-choice
+              {% if letter == question.correct %} quiz-choice--correct{% endif %}
+              {% if letter == result.submitted and not result.is_correct %} quiz-choice--wrong{% endif %}
+            ">
+              <span class="quiz-choice__letter">{{ letter }}</span> {{ text }}
+            </div>
+          {% endfor %}
+        </div>
+        <div class="quiz-result {% if result.is_correct %}quiz-result--correct{% else %}quiz-result--wrong{% endif %}">
+          {% if result.is_correct %}Correct!{% else %}Incorrect. The correct answer is {{ result.correct }}.{% endif %}
+          <p class="quiz-result__explanation">{{ result.explanation }}</p>
+        </div>
+        <a class="btn btn--primary" href="{{ url_for('quiz.quiz') }}">Next Question</a>
+      {% else %}
+        <form method="POST" action="{{ url_for('quiz.submit_answer') }}" class="quiz-form">
+          {% for letter, text in question.choices.items() %}
+            <label class="quiz-choice">
+              <input type="radio" name="answer" value="{{ letter }}" required>
+              <span class="quiz-choice__letter">{{ letter }}</span> {{ text }}
+            </label>
+          {% endfor %}
+          <button class="btn btn--primary" type="submit">Submit Answer</button>
+        </form>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

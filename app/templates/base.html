@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}LSAT Tutor{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <nav class="nav">
+    <a class="nav__brand" href="{{ url_for('chat.chat') }}">LSAT Tutor</a>
+    <div class="nav__links">
+      {% if session.get('email') %}
+        <a href="{{ url_for('chat.chat') }}">Chat</a>
+        <a href="{{ url_for('analysis.dashboard') }}">Analysis</a>
+        <a href="{{ url_for('study_plan.plan') }}">Study Plan</a>
+        <a href="{{ url_for('quiz.quiz') }}">Quiz</a>
+        <a href="{{ url_for('auth.logout') }}">Log Out</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}">Log In</a>
+        <a href="{{ url_for('auth.register') }}">Register</a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <main class="main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert--{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

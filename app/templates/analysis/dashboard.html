@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Analysis — LSAT Tutor{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1 class="page__title">Your Study Analysis</h1>
+  <p class="page__subtitle">{{ turn_count }} tutoring exchanges recorded.</p>
+
+  {% if weak_areas %}
+    <h2 class="section-title">Weak Areas (by error count)</h2>
+    <div class="weak-area-grid">
+      {% for qtype, count in weak_areas %}
+        <div class="weak-area-card">
+          <span class="weak-area-card__type">{{ qtype }}</span>
+          <span class="weak-area-card__count">{{ count }} error{{ 's' if count != 1 }}</span>
+        </div>
+      {% endfor %}
+    </div>
+    <p class="page__tip">Focus your next study session on <strong>{{ weak_areas[0][0] }}</strong>.</p>
+  {% else %}
+    <p class="page__empty">No weak areas detected yet. Complete more practice questions to see your analysis.</p>
+  {% endif %}
+</div>
+{% endblock %}

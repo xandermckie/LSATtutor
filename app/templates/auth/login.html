@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Log In — LSAT Tutor{% endblock %}
+
+{% block content %}
+<div class="form-card">
+  <h1 class="form-card__title">Log In</h1>
+
+  {% for error in errors %}
+    <p class="form-error">{{ error }}</p>
+  {% endfor %}
+
+  <form method="POST" action="{{ url_for('auth.login') }}">
+    <label class="form-label" for="email">Email</label>
+    <input class="form-input" type="email" id="email" name="email" required autocomplete="email">
+
+    <label class="form-label" for="password">Password</label>
+    <input class="form-input" type="password" id="password" name="password" required autocomplete="current-password">
+
+    <button class="btn btn--primary" type="submit">Log In</button>
+  </form>
+
+  <p class="form-card__footer">Don't have an account? <a href="{{ url_for('auth.register') }}">Register</a></p>
+</div>
+{% endblock %}

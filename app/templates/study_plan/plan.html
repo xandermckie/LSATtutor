@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Study Plan — LSAT Tutor{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1 class="page__title">Your Study Plan</h1>
+
+  <form method="POST" action="{{ url_for('study_plan.plan') }}" class="plan-form">
+    <label class="form-label" for="target_date">Exam Date (optional)</label>
+    <input
+      class="form-input form-input--inline"
+      type="date"
+      id="target_date"
+      name="target_date"
+      value="{{ target_date or '' }}"
+    >
+    <button class="btn btn--primary" type="submit">Generate Plan</button>
+  </form>
+
+  {% if generated_plan %}
+    <div class="plan-output">{{ generated_plan | safe }}</div>
+  {% else %}
+    <p class="page__empty">Click "Generate Plan" to create a personalized study schedule based on your weak areas.</p>
+  {% endif %}
+</div>
+{% endblock %}
