@@ -19,11 +19,18 @@ class BaseConfig:
     CONTEXT_COMPRESSION_THRESHOLD = 10
     CONTEXT_TURNS_TO_COMPRESS = 5
 
-    DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
+    _repo_root = os.path.dirname(os.path.dirname(__file__))
+    DATA_DIR = os.environ.get(
+        "DATA_DIR",
+        os.path.join(_repo_root, "data"),
+    )
     USERS_DIR = os.path.join(DATA_DIR, "users")
     SESSIONS_DIR = os.path.join(DATA_DIR, "sessions")
     AVATARS_DIR = os.path.join(DATA_DIR, "avatars")
-    CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "cache")
+    CACHE_DIR = os.environ.get(
+        "CACHE_DIR",
+        os.path.join(_repo_root, "cache"),
+    )
 
     MAX_AVATAR_BYTES = 2 * 1024 * 1024   # 2 MB
     MAX_CONTENT_LENGTH = 3 * 1024 * 1024  # Flask hard limit before route runs
