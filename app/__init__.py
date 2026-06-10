@@ -40,7 +40,7 @@ def create_app() -> Flask:
     app.register_blueprint(quiz_bp)
     app.register_blueprint(profile_bp)
 
-    from app.storage import StorageCorruptError, load_user
+    from app.storage import StorageCorruptError, load_user_cached
 
     @app.context_processor
     def inject_ui_prefs():
@@ -55,7 +55,7 @@ def create_app() -> Flask:
                 "mail_enabled": mail_enabled,
             }
         try:
-            user = load_user(email)
+            user = load_user_cached(email)
         except StorageCorruptError:
             return {
                 "pomodoro_intro_dismissed": False,

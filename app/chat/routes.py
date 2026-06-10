@@ -1,6 +1,7 @@
 """Chat blueprint routes — the main tutoring interface."""
 
 import re
+import threading
 from datetime import date
 
 from flask import current_app, jsonify, redirect, render_template, request, session, url_for
@@ -13,7 +14,7 @@ from app.chat.context_manager import maybe_compress
 from app.chat.prompt_builder import build_messages
 from app.email_service import send_daily_reminder
 from app.extensions import limiter
-from app.storage import StorageCorruptError, load_session, load_user, save_session, save_user
+from app.storage import StorageCorruptError, invalidate_user_cache, load_session, load_user_cached, save_session, save_user
 
 _META_RE = re.compile(
     r"\nRATIO_META type=(\S+) result=(correct|incorrect|neutral)\s*$",
@@ -74,28 +75,49 @@ def chat():
     """Render the main chat interface.
 
     Computes today's focus area and fires a daily reminder email on first visit.
+    The email is dispatched in a background thread so SMTP never delays the page load.
+    Chat history is passed directly to the template to avoid a second round-trip.
     """
     email = session["email"]
     today = date.today().isoformat()
     daily_focus = ""
+    turns = []
 
     try:
         session_data = load_session(email)
         daily_focus = get_daily_focus(session_data)
+        turns = session_data.get("turns", [])
     except StorageCorruptError:
         session_data = {}
 
     try:
-        user = load_user(email)
+        user = load_user_cached(email)
         if user and user.get("last_reminder_date") != today:
             exam_date = user.get("study_plan_exam_date") or user.get("target_exam_date")
-            send_daily_reminder(email, daily_focus, exam_date)
+            # Fire email in background so SMTP never blocks the page response.
+            app_ctx = current_app._get_current_object()
+            t = threading.Thread(
+                target=_send_reminder_bg,
+                args=(app_ctx, email, daily_focus, exam_date),
+                daemon=True,
+            )
+            t.start()
             user["last_reminder_date"] = today
             save_user(email, user)
+            invalidate_user_cache(email)
     except Exception:
         pass
 
-    return render_template("chat/chat.html", daily_focus=daily_focus)
+    return render_template("chat/chat.html", daily_focus=daily_focus, turns=turns)
+
+
+def _send_reminder_bg(app, email: str, focus: str, exam_date: str | None) -> None:
+    """Send the daily reminder email inside an app context on a background thread."""
+    with app.app_context():
+        try:
+            send_daily_reminder(email, focus, exam_date)
+        except Exception:
+            pass
 
 
 @chat_bp.route("/chat", methods=["POST"])

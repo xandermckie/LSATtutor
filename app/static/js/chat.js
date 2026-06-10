@@ -16,16 +16,9 @@
 
   if (!form) return;
 
-  /* Load prior chat history when the page opens. */
-  document.addEventListener("DOMContentLoaded", function () {
-    fetch("/history")
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        (data.turns || []).forEach(function (turn) {
-          appendMessage(turn.role, turn.content);
-        });
-      })
-      .catch(function () {});
+  /* Render prior chat history inlined by the server — no extra round-trip needed. */
+  (window.__ratioHistory || []).forEach(function (turn) {
+    appendMessage(turn.role, turn.content);
   });
 
   function appendMessage(role, text) {

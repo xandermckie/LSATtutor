@@ -6,7 +6,7 @@ from typing import Any
 import bcrypt
 from flask import flash, jsonify, redirect, session, url_for
 
-from app.storage import StorageCorruptError, load_session, load_user
+from app.storage import StorageCorruptError, load_session, load_user, load_user_cached
 
 
 def hash_password(plain: str) -> str:
@@ -67,6 +67,9 @@ def load_session_for_api(email: str) -> tuple[dict | None, Any]:
 def get_current_user() -> tuple[dict | None, Any]:
     """Load the logged-in user or return a redirect response.
 
+    Uses the per-request cache so repeated calls within one request
+    do not re-read from disk.
+
     Returns:
         (user_dict, None) on success, or (None, redirect_response) on failure.
     """
@@ -74,7 +77,7 @@ def get_current_user() -> tuple[dict | None, Any]:
     if not email:
         return None, redirect(url_for("auth.login"))
     try:
-        user = load_user(email)
+        user = load_user_cached(email)
     except StorageCorruptError:
         return None, force_logout_redirect()
     if user is None:
@@ -85,6 +88,9 @@ def get_current_user() -> tuple[dict | None, Any]:
 def get_current_user_for_api() -> tuple[dict | None, Any]:
     """Load the logged-in user for a JSON route or return a 401 response.
 
+    Uses the per-request cache so repeated calls within one request
+    do not re-read from disk.
+
     Returns:
         (user_dict, None) on success, or (None, json_response) on failure.
     """
@@ -92,7 +98,7 @@ def get_current_user_for_api() -> tuple[dict | None, Any]:
     if not email:
         return None, (jsonify({"error": "Not authenticated."}), 401)
     try:
-        user = load_user(email)
+        user = load_user_cached(email)
     except StorageCorruptError:
         return None, force_logout_json()
     if user is None:
