@@ -1,11 +1,17 @@
 """CRUD operations for user account JSON files."""
 
 import hashlib
+import json
+import logging
 import os
 
+from cryptography.fernet import InvalidToken
 from flask import current_app
 
 from app.storage.encryption import decrypt_data, encrypt_data
+from app.storage.errors import StorageCorruptError
+
+logger = logging.getLogger(__name__)
 
 
 def _user_path(email: str) -> str:
@@ -27,8 +33,15 @@ def load_user(email: str) -> dict | None:
     path = _user_path(email)
     if not os.path.exists(path):
         return None
-    with open(path, "rb") as f:
-        return decrypt_data(f.read())
+    try:
+        with open(path, "rb") as f:
+            return decrypt_data(f.read())
+    except (InvalidToken, json.JSONDecodeError) as exc:
+        logger.exception("Corrupt user data at %s", os.path.basename(path))
+        raise StorageCorruptError(str(exc)) from exc
+    except OSError as exc:
+        logger.exception("Failed to read user data at %s", os.path.basename(path))
+        raise StorageCorruptError(str(exc)) from exc
 
 
 def save_user(email: str, user_data: dict) -> None:

@@ -5,10 +5,10 @@ from datetime import date
 from flask import flash, make_response, redirect, render_template, request, session, url_for
 
 from app.analysis.weak_area_detector import get_ranked_weak_areas
-from app.auth.helpers import login_required
+from app.auth.helpers import force_logout_redirect, get_current_user, login_required
 from app.email_service import send_plan_email
 from app.extensions import limiter
-from app.storage import load_session, load_user, save_user
+from app.storage import StorageCorruptError, load_session, save_user
 from app.study_plan import study_plan_bp
 from app.study_plan.calendar_builder import build_ics
 from app.study_plan.plan_generator import generate_study_plan
@@ -34,8 +34,13 @@ def plan():
     After both are used the plan is locked until the exam date passes.
     """
     email = session["email"]
-    user = load_user(email)
-    session_data = load_session(email)
+    user, redirect_resp = get_current_user()
+    if redirect_resp:
+        return redirect_resp
+    try:
+        session_data = load_session(email)
+    except StorageCorruptError:
+        return force_logout_redirect()
     weak_areas = get_ranked_weak_areas(session_data)
 
     stored_plan = user.get("study_plan_content")
@@ -94,15 +99,28 @@ def plan():
 def export_ics():
     """Generate and download a .ics calendar file for the user's study schedule."""
     email = session["email"]
-    user = load_user(email)
-    session_data = load_session(email)
+    user, redirect_resp = get_current_user()
+    if redirect_resp:
+        return redirect_resp
+    try:
+        session_data = load_session(email)
+    except StorageCorruptError:
+        return force_logout_redirect()
     weak_areas = get_ranked_weak_areas(session_data)
 
     exam_date = user.get("study_plan_exam_date") or user.get("target_exam_date")
 
     selected_days = request.form.getlist("days")
     start_time = request.form.get("start_time", "19:00")
-    duration = int(request.form.get("duration", "60"))
+    raw_duration = request.form.get("duration", "60").strip()
+    try:
+        duration = int(raw_duration)
+    except ValueError:
+        flash("Session duration must be a whole number of minutes.", "error")
+        return redirect(url_for("study_plan.plan"))
+    if duration <= 0 or duration > 480:
+        flash("Session duration must be between 1 and 480 minutes.", "error")
+        return redirect(url_for("study_plan.plan"))
 
     ics_bytes = build_ics(exam_date, weak_areas, selected_days, start_time, duration)
 
@@ -118,7 +136,9 @@ def export_ics():
 def send_reminder():
     """Re-send the stored study plan to the user's email address."""
     email = session["email"]
-    user = load_user(email)
+    user, redirect_resp = get_current_user()
+    if redirect_resp:
+        return redirect_resp
     plan_text = user.get("study_plan_content")
     exam_date = user.get("study_plan_exam_date")
 

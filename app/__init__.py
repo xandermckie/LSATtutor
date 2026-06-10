@@ -1,11 +1,13 @@
 """App factory — wires together all blueprints, extensions, and config."""
 
+import logging
 import os
 
-from flask import Flask, flash, redirect, render_template, request, session, url_for
-
+from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
 from app.config import get_config
 from app.extensions import get_cache, limiter, mail
+
+logger = logging.getLogger(__name__)
 
 
 def create_app() -> Flask:
@@ -38,7 +40,7 @@ def create_app() -> Flask:
     app.register_blueprint(quiz_bp)
     app.register_blueprint(profile_bp)
 
-    from app.storage import load_user
+    from app.storage import StorageCorruptError, load_user
 
     @app.context_processor
     def inject_ui_prefs():
@@ -46,7 +48,10 @@ def create_app() -> Flask:
         email = session.get("email")
         if not email:
             return {"pomodoro_intro_dismissed": False}
-        user = load_user(email)
+        try:
+            user = load_user(email)
+        except StorageCorruptError:
+            return {"pomodoro_intro_dismissed": False}
         if user is None:
             return {"pomodoro_intro_dismissed": False}
         return {"pomodoro_intro_dismissed": bool(user.get("pomodoro_intro_dismissed_at"))}
@@ -69,7 +74,26 @@ def create_app() -> Flask:
     def file_too_large(e):
         """Handle file uploads that exceed MAX_CONTENT_LENGTH."""
         flash("Uploaded file is too large. Maximum size is 2 MB.", "error")
-        return redirect(request.referrer or url_for("profile.profile"))
+        return redirect(url_for("profile.profile"))
+
+    @app.errorhandler(429)
+    def rate_limited(e):
+        """Handle Flask-Limiter rate limit responses with a friendly message."""
+        message = getattr(e, "description", None) or "Too many requests. Please wait and try again."
+        if request.path in ("/chat", "/history") or request.accept_mimetypes.best == "application/json":
+            return jsonify({"error": message}), 429
+        flash(message, "error")
+        return redirect(request.referrer or url_for("index"))
+
+    @app.errorhandler(500)
+    def internal_error(e):
+        """Return a safe error page without exposing stack traces."""
+        logger.exception("Unhandled server error on %s", request.path)
+        message = "Something went wrong on our end. Please try again in a moment."
+        if request.path in ("/chat", "/history") or request.accept_mimetypes.best == "application/json":
+            return jsonify({"error": message}), 500
+        flash(message, "error")
+        return redirect(request.referrer or url_for("index")), 500
 
     return app
 

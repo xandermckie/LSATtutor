@@ -19,19 +19,25 @@ def test_verify_wrong_password():
 
 def test_validate_register_valid():
     """validate_register returns no errors for well-formed input."""
-    errors = validate_register("user@example.com", "password123", "password123")
+    errors = validate_register(
+        "user@example.com", "password123", "password123", agreed_to_terms=True
+    )
     assert errors == []
 
 
 def test_validate_register_mismatched_passwords():
     """validate_register flags mismatched passwords."""
-    errors = validate_register("user@example.com", "abc12345", "abc12346")
+    errors = validate_register(
+        "user@example.com", "abc12345", "abc12346", agreed_to_terms=True
+    )
     assert any("match" in e.lower() for e in errors)
 
 
 def test_validate_register_short_password():
     """validate_register flags passwords under 8 characters."""
-    errors = validate_register("user@example.com", "short", "short")
+    errors = validate_register(
+        "user@example.com", "short", "short", agreed_to_terms=True
+    )
     assert any("8" in e for e in errors)
 
 

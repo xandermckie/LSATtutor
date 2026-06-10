@@ -70,16 +70,26 @@
       body: JSON.stringify({ message: message }),
     })
       .then(function (res) {
-        if (!res.ok) throw new Error("Request failed with status " + res.status);
-        return res.json();
+        return res.json().then(function (data) {
+          return { ok: res.ok, status: res.status, data: data };
+        }).catch(function () {
+          return { ok: false, status: res.status, data: null };
+        });
       })
-      .then(function (data) {
+      .then(function (result) {
         thread.removeChild(loadingBubble);
-        if (data.error) {
-          appendMessage("system", data.error);
+        if (!result.ok) {
+          var msg = (result.data && result.data.error)
+            ? result.data.error
+            : "Something went wrong. Please try again.";
+          appendMessage("system", msg);
+          return;
+        }
+        if (result.data.error) {
+          appendMessage("system", result.data.error);
         } else {
-          appendMessage("assistant", data.response);
-          updateQuota(data.remaining);
+          appendMessage("assistant", result.data.response);
+          updateQuota(result.data.remaining);
         }
       })
       .catch(function (err) {

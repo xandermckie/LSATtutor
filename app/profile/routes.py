@@ -18,10 +18,23 @@ from flask import (
     url_for,
 )
 
-from app.auth.helpers import hash_password, login_required, verify_password
+from app.auth.helpers import (
+    force_logout_redirect,
+    get_current_user,
+    get_current_user_for_api,
+    hash_password,
+    login_required,
+    verify_password,
+)
 from app.extensions import limiter
 from app.profile import profile_bp
-from app.storage import delete_session, delete_user, load_session, load_user, save_user
+from app.storage import (
+    StorageCorruptError,
+    delete_session,
+    delete_user,
+    load_session,
+    save_user,
+)
 
 _ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg"}
 _MAGIC_BYTES = {
@@ -49,7 +62,9 @@ def _avatar_path(email: str, avatars_dir: str) -> str:
 def profile():
     """Render the profile page and handle username changes on POST."""
     email = session["email"]
-    user = load_user(email)
+    user, redirect_resp = get_current_user()
+    if redirect_resp:
+        return redirect_resp
 
     if request.method == "POST":
         raw = request.form.get("username", "").strip()
@@ -133,7 +148,9 @@ def change_password():
     Requires: old_password, new_password, confirm_password form fields.
     """
     email = session["email"]
-    user = load_user(email)
+    user, redirect_resp = get_current_user()
+    if redirect_resp:
+        return redirect_resp
 
     old_pw = request.form.get("old_password", "")
     new_pw = request.form.get("new_password", "")
@@ -174,8 +191,13 @@ def export():
     Includes chat history, weak area tallies, and study plan metadata.
     """
     email = session["email"]
-    user = load_user(email)
-    session_data = load_session(email)
+    user, redirect_resp = get_current_user()
+    if redirect_resp:
+        return redirect_resp
+    try:
+        session_data = load_session(email)
+    except StorageCorruptError:
+        return force_logout_redirect()
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -215,7 +237,9 @@ def export():
 def dismiss_pomodoro_intro():
     """Record that the user dismissed the Pomodoro timer intro popup."""
     email = session["email"]
-    user = load_user(email)
+    user, error_resp = get_current_user_for_api()
+    if error_resp:
+        return error_resp
     if not user.get("pomodoro_intro_dismissed_at"):
         user["pomodoro_intro_dismissed_at"] = datetime.now(timezone.utc).isoformat()
         save_user(email, user)

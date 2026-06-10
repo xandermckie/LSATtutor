@@ -33,7 +33,7 @@ def _cache_key(messages: list[dict], system: str) -> str:
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
-def call_claude(messages: list[dict], system: str, cache_dir: str) -> str:
+def call_claude(messages: list[dict], system: str, cache_dir: str) -> tuple[str, bool]:
     """Send messages to Claude and return the text response.
 
     Checks diskcache first; falls back to a canned tip on API failure.
@@ -44,14 +44,14 @@ def call_claude(messages: list[dict], system: str, cache_dir: str) -> str:
         cache_dir: Path to the diskcache directory.
 
     Returns:
-        Claude's response text (or a fallback string on API error).
+        Tuple of (response text, success flag). success is False on API errors.
     """
     cache = get_cache(cache_dir)
     key = _cache_key(messages, system)
 
     cached = cache.get(key)
     if cached is not None:
-        return cached
+        return cached, True
 
     try:
         client = _get_client()
@@ -61,21 +61,33 @@ def call_claude(messages: list[dict], system: str, cache_dir: str) -> str:
             system=system,
             messages=messages,
         )
+        if not response.content or not getattr(response.content[0], "text", None):
+            logger.error("Claude API returned an empty or unexpected response shape")
+            return _fallback_response(), False
         text = response.content[0].text
         cache.set(key, text, expire=86400)
-        return text
+        return text, True
     except anthropic.APIConnectionError:
         logger.exception("Claude API connection error in call_claude")
-        return "Could not reach the tutoring service. Please check your connection and try again."
+        return (
+            "Could not reach the tutoring service. Please check your connection and try again.",
+            False,
+        )
     except anthropic.RateLimitError:
         logger.exception("Claude API rate limit error in call_claude")
-        return "The tutoring service is busy right now. Please wait a moment and try again."
+        return (
+            "The tutoring service is busy right now. Please wait a moment and try again.",
+            False,
+        )
     except anthropic.AuthenticationError:
         logger.exception("Claude API authentication error in call_claude")
-        return "API authentication failed. Please contact support."
+        return ("API authentication failed. Please contact support.", False)
     except anthropic.APIError:
         logger.exception("Unexpected Claude API error in call_claude")
-        return _fallback_response()
+        return _fallback_response(), False
+    except (IndexError, AttributeError, TypeError):
+        logger.exception("Unexpected Claude response format in call_claude")
+        return _fallback_response(), False
 
 
 def _fallback_response() -> str:

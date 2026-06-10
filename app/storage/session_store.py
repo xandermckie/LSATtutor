@@ -1,11 +1,17 @@
 """CRUD operations for per-user session/history JSON files."""
 
 import hashlib
+import json
+import logging
 import os
 
+from cryptography.fernet import InvalidToken
 from flask import current_app
 
 from app.storage.encryption import decrypt_data, encrypt_data
+from app.storage.errors import StorageCorruptError
+
+logger = logging.getLogger(__name__)
 
 
 def _session_path(email: str) -> str:
@@ -27,8 +33,15 @@ def load_session(email: str) -> dict:
     path = _session_path(email)
     if not os.path.exists(path):
         return {"turns": [], "summary": "", "weak_areas": {}}
-    with open(path, "rb") as f:
-        return decrypt_data(f.read())
+    try:
+        with open(path, "rb") as f:
+            return decrypt_data(f.read())
+    except (InvalidToken, json.JSONDecodeError) as exc:
+        logger.exception("Corrupt session data at %s", os.path.basename(path))
+        raise StorageCorruptError(str(exc)) from exc
+    except OSError as exc:
+        logger.exception("Failed to read session data at %s", os.path.basename(path))
+        raise StorageCorruptError(str(exc)) from exc
 
 
 def save_session(email: str, session_data: dict) -> None:
