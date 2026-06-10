@@ -24,7 +24,11 @@
     /* Add a new message bubble to the thread. */
     const div = document.createElement("div");
     div.className = "chat-message chat-message--" + role;
-    div.textContent = text;
+    if (role === "assistant" && typeof marked !== "undefined" && typeof DOMPurify !== "undefined") {
+      div.innerHTML = DOMPurify.sanitize(marked.parse(text));
+    } else {
+      div.textContent = text;
+    }
     thread.appendChild(div);
     thread.scrollTop = thread.scrollHeight;
     return div;

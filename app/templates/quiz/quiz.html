@@ -7,7 +7,7 @@
 
   {% if question %}
     <div class="quiz-card">
-      <p class="quiz-card__type">{{ question.type }}</p>
+      <p class="quiz-card__type">{% if result %}{{ question.type }}{% else %}LSAT Practice Question{% endif %}</p>
       <p class="quiz-card__stimulus">{{ question.stimulus }}</p>
       <p class="quiz-card__question"><strong>{{ question.question }}</strong></p>
 
