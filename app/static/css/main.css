@@ -186,6 +186,10 @@ a:hover { color: var(--color-brown); }
   margin-top: 1.75rem; font-size: .8rem; color: var(--color-text-light);
   letter-spacing: .02em;
 }
+.hero__welcome {
+  font-family: var(--font-serif); font-size: 1.15rem;
+  color: var(--color-brown); margin-bottom: 1rem; font-style: italic;
+}
 .hero-section { background: var(--color-bg); }
 
 /* Slideshow */
@@ -298,7 +302,7 @@ a:hover { color: var(--color-brown); }
 }
 
 /* ===== Chat ===== */
-.chat-container { display: flex; flex-direction: column; height: calc(100vh - 160px); }
+.chat-container { display: flex; flex-direction: column; height: calc(100vh - 160px); position: relative; margin-top: 2.5rem; }
 .chat-thread {
   flex: 1; overflow-y: auto; border: 1px solid var(--color-border);
   border-radius: var(--radius-lg); padding: 1.25rem; background: var(--color-surface);
@@ -369,6 +373,33 @@ a:hover { color: var(--color-brown); }
 .plan-fix { margin-top: 1.5rem; padding: 1.25rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); }
 .plan-fix__label { margin: 0 0 .75rem; font-size: .9rem; color: var(--color-text-muted); }
 .plan-fix__locked { margin-top: 1.5rem; font-size: .875rem; color: var(--color-text-light); }
+.plan-export__note { font-size: .8rem; color: var(--color-text-light); margin-top: .25rem; }
+.plan-actions { margin-top: 1rem; margin-bottom: .5rem; }
+
+/* ===== Daily Focus Banner ===== */
+.daily-focus {
+  display: flex; align-items: center; gap: .5rem;
+  background: var(--color-brown-light); border: 1px solid #d6bfa0;
+  border-radius: var(--radius); padding: .55rem 1rem;
+  font-size: .875rem; color: var(--color-brown);
+  margin-bottom: 1rem;
+}
+.daily-focus::before {
+  content: "📌";
+  font-size: .9rem;
+}
+
+/* ===== Chat Mascot ===== */
+.chat-mascot {
+  position: absolute; top: -36px; right: 20px;
+  width: 64px; height: 72px;
+  pointer-events: none; z-index: 2;
+  transition: transform .3s ease;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.15));
+}
+.chat-container:hover .chat-mascot {
+  transform: rotate(6deg);
+}
 
 /* ===== Quiz ===== */
 .quiz-card {

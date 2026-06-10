@@ -4,7 +4,7 @@ from datetime import date
 
 from flask import flash, make_response, redirect, render_template, request, session, url_for
 
-from app.analysis.weak_area_detector import get_ranked_weak_areas
+from app.analysis.weak_area_detector import get_daily_focus, get_ranked_weak_areas
 from app.auth.helpers import force_logout_redirect, get_current_user, login_required
 from app.email_service import send_plan_email
 from app.extensions import limiter
@@ -83,6 +83,7 @@ def plan():
 
         return redirect(url_for("study_plan.plan"))
 
+    daily_focus = get_daily_focus(session_data)
     return render_template(
         "study_plan/plan.html",
         weak_areas=weak_areas,
@@ -90,6 +91,7 @@ def plan():
         target_date=stored_exam_date or user.get("target_exam_date"),
         fix_used=fix_used,
         has_plan=bool(stored_plan),
+        daily_focus=daily_focus,
     )
 
 

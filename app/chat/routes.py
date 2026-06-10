@@ -5,14 +5,15 @@ from datetime import date
 
 from flask import current_app, jsonify, redirect, render_template, request, session, url_for
 
-from app.analysis.weak_area_detector import update_weak_areas
+from app.analysis.weak_area_detector import get_daily_focus, update_weak_areas
 from app.auth.helpers import load_session_for_api, login_required
 from app.chat import chat_bp
 from app.chat.claude_client import call_claude
 from app.chat.context_manager import maybe_compress
 from app.chat.prompt_builder import build_messages
+from app.email_service import send_daily_reminder
 from app.extensions import limiter
-from app.storage import save_session
+from app.storage import StorageCorruptError, load_session, load_user, save_session, save_user
 
 _META_RE = re.compile(
     r"\nRATIO_META type=(\S+) result=(correct|incorrect|neutral)\s*$",
@@ -70,8 +71,31 @@ def _extract_meta(text: str) -> tuple[str, str | None, str | None]:
 @chat_bp.route("/chat", methods=["GET"])
 @login_required
 def chat():
-    """Render the main chat interface."""
-    return render_template("chat/chat.html")
+    """Render the main chat interface.
+
+    Computes today's focus area and fires a daily reminder email on first visit.
+    """
+    email = session["email"]
+    today = date.today().isoformat()
+    daily_focus = ""
+
+    try:
+        session_data = load_session(email)
+        daily_focus = get_daily_focus(session_data)
+    except StorageCorruptError:
+        session_data = {}
+
+    try:
+        user = load_user(email)
+        if user and user.get("last_reminder_date") != today:
+            exam_date = user.get("study_plan_exam_date") or user.get("target_exam_date")
+            send_daily_reminder(email, daily_focus, exam_date)
+            user["last_reminder_date"] = today
+            save_user(email, user)
+    except Exception:
+        pass
+
+    return render_template("chat/chat.html", daily_focus=daily_focus)
 
 
 @chat_bp.route("/chat", methods=["POST"])

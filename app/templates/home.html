@@ -15,11 +15,19 @@
         identifies where you lose points, and builds a study plan around your exam date.
         No fluff. Just structured reasoning practice that actually works.
       </p>
-      <div class="hero__actions">
-        <a href="{{ url_for('auth.register') }}" class="btn btn--primary btn--lg">Get Started for Free</a>
-        <a href="{{ url_for('auth.login') }}" class="btn btn--outline btn--lg">Log In</a>
-      </div>
-      <p class="hero__proof">Built for aspiring lawyers. Powered by Claude AI.</p>
+      {% if logged_in %}
+        <p class="hero__welcome">Welcome back, {{ display_name }}.</p>
+        <div class="hero__actions">
+          <a href="{{ url_for('chat.chat') }}" class="btn btn--primary btn--lg">Continue Studying</a>
+          <a href="{{ url_for('analysis.analysis') }}" class="btn btn--outline btn--lg">View My Progress</a>
+        </div>
+      {% else %}
+        <div class="hero__actions">
+          <a href="{{ url_for('auth.register') }}" class="btn btn--primary btn--lg">Get Started for Free</a>
+          <a href="{{ url_for('auth.login') }}" class="btn btn--outline btn--lg">Log In</a>
+        </div>
+        <p class="hero__proof">Built for aspiring lawyers. Powered by Claude AI.</p>
+      {% endif %}
     </div>
 
     <div class="hero__slideshow" aria-label="Law students and legal study images">
@@ -167,9 +175,15 @@
 
 {# ── Final CTA ── #}
 <section style="background: var(--color-surface-alt); padding: 4rem 2rem; text-align: center;">
-  <h2 style="font-family: var(--font-serif); font-size: 1.75rem; margin-bottom: .75rem;">Ready to start reasoning sharper?</h2>
-  <p style="color: var(--color-text-muted); margin-bottom: 1.75rem; font-size: 1rem;">Join students who are preparing smarter, not harder.</p>
-  <a href="{{ url_for('auth.register') }}" class="btn btn--primary btn--lg">Create Your Free Account</a>
+  {% if logged_in %}
+    <h2 style="font-family: var(--font-serif); font-size: 1.75rem; margin-bottom: .75rem;">Keep the momentum going, {{ display_name }}.</h2>
+    <p style="color: var(--color-text-muted); margin-bottom: 1.75rem; font-size: 1rem;">Your weak areas are tracked. Your plan is ready. Go practice.</p>
+    <a href="{{ url_for('chat.chat') }}" class="btn btn--primary btn--lg">Back to Studying</a>
+  {% else %}
+    <h2 style="font-family: var(--font-serif); font-size: 1.75rem; margin-bottom: .75rem;">Ready to start reasoning sharper?</h2>
+    <p style="color: var(--color-text-muted); margin-bottom: 1.75rem; font-size: 1rem;">Join students who are preparing smarter, not harder.</p>
+    <a href="{{ url_for('auth.register') }}" class="btn btn--primary btn--lg">Create Your Free Account</a>
+  {% endif %}
 </section>
 
 {% endblock %}

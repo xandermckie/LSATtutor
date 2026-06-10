@@ -63,6 +63,43 @@ def update_weak_areas(
     return session_data
 
 
+_DEFAULT_TIPS = [
+    "Assumption questions",
+    "Weaken questions",
+    "Strengthen questions",
+    "Flaw questions",
+    "Inference questions",
+    "Main Point questions",
+    "Parallel Reasoning questions",
+    "Principle questions",
+    "Resolve questions",
+    "Analytical Reasoning (Logic Games)",
+    "Reading Comprehension",
+]
+
+
+def get_daily_focus(session_data: dict) -> str:
+    """Return the question type the student should focus on today.
+
+    Uses the top weak area if any exist; otherwise rotates through a default
+    tip list based on the calendar day so it changes daily.
+
+    Args:
+        session_data: The full session dict.
+
+    Returns:
+        A short focus label string, e.g. "Assumption questions".
+    """
+    from datetime import date
+
+    weak = session_data.get("weak_areas", {})
+    if weak:
+        top = max(weak, key=lambda k: weak[k])
+        return top
+    day_index = date.today().toordinal() % len(_DEFAULT_TIPS)
+    return _DEFAULT_TIPS[day_index]
+
+
 def get_ranked_weak_areas(session_data: dict) -> list[tuple[str, int]]:
     """Return weak areas sorted by error count, highest first.
 

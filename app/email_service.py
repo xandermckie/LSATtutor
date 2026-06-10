@@ -6,6 +6,46 @@ from flask_mail import Message
 from app.extensions import mail
 
 
+def send_daily_reminder(user_email: str, focus_area: str, exam_date: str | None) -> bool:
+    """Send a short daily study nudge email.
+
+    Does nothing and returns False silently when mail is not configured.
+
+    Args:
+        user_email: Recipient address.
+        focus_area: Today's recommended focus question type.
+        exam_date: ISO date string for the target exam, or None.
+
+    Returns:
+        True if the email was sent, False otherwise.
+    """
+    if not current_app.config.get("MAIL_ENABLED"):
+        return False
+    if not current_app.config.get("MAIL_PASSWORD"):
+        return False
+
+    exam_line = f"Your exam is on {exam_date}. Keep pushing!" if exam_date else "Set your exam date in Study Plan to get a personalized schedule."
+    body = (
+        "Hi,\n\n"
+        f"Today's focus: {focus_area}\n\n"
+        f"{exam_line}\n\n"
+        "Head to the Tutor Chat to practice, or take a quick quiz to sharpen your skills.\n\n"
+        "Good luck today!\n"
+        "The Ratio Team\n"
+    )
+
+    try:
+        msg = Message(
+            subject=f"Ratio: Today focus on {focus_area}",
+            recipients=[user_email],
+            body=body,
+        )
+        mail.send(msg)
+        return True
+    except Exception:
+        return False
+
+
 def send_plan_email(user_email: str, plan_text: str, exam_date: str | None) -> bool:
     """Send the user's study plan to their email address.
 

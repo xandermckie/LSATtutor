@@ -45,16 +45,38 @@ def create_app() -> Flask:
     @app.context_processor
     def inject_ui_prefs():
         """Inject per-user UI preference flags into all templates."""
+        mail_enabled = bool(app.config.get("MAIL_ENABLED"))
         email = session.get("email")
         if not email:
-            return {"pomodoro_intro_dismissed": False}
+            return {
+                "pomodoro_intro_dismissed": False,
+                "logged_in": False,
+                "display_name": "",
+                "mail_enabled": mail_enabled,
+            }
         try:
             user = load_user(email)
         except StorageCorruptError:
-            return {"pomodoro_intro_dismissed": False}
+            return {
+                "pomodoro_intro_dismissed": False,
+                "logged_in": True,
+                "display_name": email.split("@")[0],
+                "mail_enabled": mail_enabled,
+            }
         if user is None:
-            return {"pomodoro_intro_dismissed": False}
-        return {"pomodoro_intro_dismissed": bool(user.get("pomodoro_intro_dismissed_at"))}
+            return {
+                "pomodoro_intro_dismissed": False,
+                "logged_in": True,
+                "display_name": email.split("@")[0],
+                "mail_enabled": mail_enabled,
+            }
+        display_name = user.get("username") or email.split("@")[0]
+        return {
+            "pomodoro_intro_dismissed": bool(user.get("pomodoro_intro_dismissed_at")),
+            "logged_in": True,
+            "display_name": display_name,
+            "mail_enabled": mail_enabled,
+        }
 
     @app.route("/")
     def index():

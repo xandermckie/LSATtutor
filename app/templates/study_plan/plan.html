@@ -13,6 +13,10 @@
     {% endif %}
   {% endwith %}
 
+  {% if daily_focus %}
+  <div class="daily-focus">Today's focus: <strong>{{ daily_focus }}</strong></div>
+  {% endif %}
+
   {% if not has_plan %}
     {# No plan yet — show the generate form #}
     <form method="POST" action="{{ url_for('study_plan.plan') }}" class="plan-form">
@@ -67,9 +71,13 @@
 
     {# Email reminder #}
     <div class="plan-actions">
-      <form method="POST" action="{{ url_for('study_plan.send_reminder') }}" style="display:inline;">
-        <button class="btn btn--ghost" type="submit">Email me this plan</button>
-      </form>
+      {% if mail_enabled %}
+        <form method="POST" action="{{ url_for('study_plan.send_reminder') }}" style="display:inline;">
+          <button class="btn btn--ghost" type="submit">Email me this plan</button>
+        </form>
+      {% else %}
+        <p class="plan-export__note">Add a Gmail App Password to .env to enable email reminders.</p>
+      {% endif %}
     </div>
 
     {% if not fix_used %}
