@@ -2,11 +2,14 @@
 
 import hashlib
 import json
+import logging
 import os
 
 import anthropic
 
 from app.extensions import get_cache
+
+logger = logging.getLogger(__name__)
 
 _client = None
 
@@ -33,7 +36,7 @@ def _cache_key(messages: list[dict], system: str) -> str:
 def call_claude(messages: list[dict], system: str, cache_dir: str) -> str:
     """Send messages to Claude and return the text response.
 
-    Checks diskcache first; falls back to hardcoded tips on API failure.
+    Checks diskcache first; falls back to a canned tip on API failure.
 
     Args:
         messages: List of message dicts (role + content).
@@ -59,19 +62,23 @@ def call_claude(messages: list[dict], system: str, cache_dir: str) -> str:
             messages=messages,
         )
         text = response.content[0].text
-        cache.set(key, text, expire=86400)  # cache for 24 hours
+        cache.set(key, text, expire=86400)
         return text
     except anthropic.APIConnectionError:
-        return "Could not reach the Claude API. Please check your internet connection and try again."
+        logger.exception("Claude API connection error in call_claude")
+        return "Could not reach the tutoring service. Please check your connection and try again."
     except anthropic.RateLimitError:
+        logger.exception("Claude API rate limit error in call_claude")
         return "The tutoring service is busy right now. Please wait a moment and try again."
-    except anthropic.APIStatusError as e:
-        if e.status_code == 401:
-            return "API authentication failed. Please contact support."
-        return _fallback_response(f"API error {e.status_code}: {str(e)}")
+    except anthropic.AuthenticationError:
+        logger.exception("Claude API authentication error in call_claude")
+        return "API authentication failed. Please contact support."
+    except anthropic.APIError:
+        logger.exception("Unexpected Claude API error in call_claude")
+        return _fallback_response()
 
 
-def _fallback_response(error_detail: str) -> str:
+def _fallback_response() -> str:
     """Return a canned fallback tip when the API is unavailable."""
     fallback_path = os.path.join(
         os.path.dirname(os.path.dirname(__file__)),

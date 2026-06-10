@@ -1,8 +1,11 @@
 """Generate a personalized LSAT study plan using Claude."""
 
+import logging
 import os
 
 import anthropic
+
+logger = logging.getLogger(__name__)
 
 
 def generate_study_plan(weak_areas: list[tuple[str, int]], target_date: str | None) -> str:
@@ -13,11 +16,11 @@ def generate_study_plan(weak_areas: list[tuple[str, int]], target_date: str | No
         target_date: The student's exam date string (e.g. "2025-09-13"), or None.
 
     Returns:
-        A markdown-formatted study plan string, or a fallback message on error.
+        A markdown-formatted study plan string, or a user-friendly fallback message on error.
     """
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        return "Study plan generation is unavailable — API key not configured."
+        return "Study plan generation is unavailable. Please contact support."
 
     area_text = (
         "\n".join(f"- {qtype} ({count} errors)" for qtype, count in weak_areas)
@@ -42,8 +45,14 @@ def generate_study_plan(weak_areas: list[tuple[str, int]], target_date: str | No
         )
         return response.content[0].text
     except anthropic.APIConnectionError:
-        return "Could not reach the API. Please check your internet connection."
+        logger.exception("Claude API connection error in generate_study_plan")
+        return "Could not reach the tutoring service. Please check your connection and try again."
     except anthropic.RateLimitError:
-        return "Rate limit reached. Please wait a moment and try again."
-    except anthropic.APIStatusError as e:
-        return f"Could not generate study plan (error {e.status_code}). Please try again later."
+        logger.exception("Claude API rate limit error in generate_study_plan")
+        return "The service is busy right now. Please wait a moment and try generating your plan again."
+    except anthropic.AuthenticationError:
+        logger.exception("Claude API authentication error in generate_study_plan")
+        return "Study plan generation is unavailable. Please contact support."
+    except anthropic.APIError:
+        logger.exception("Unexpected Claude API error in generate_study_plan")
+        return "Could not generate your study plan. Please try again in a few minutes."

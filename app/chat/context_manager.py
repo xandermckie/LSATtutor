@@ -1,8 +1,11 @@
 """Manages session context compression to keep the Claude context window bounded."""
 
+import logging
 import os
 
 import anthropic
+
+logger = logging.getLogger(__name__)
 
 COMPRESSION_SYSTEM = (
     "You are a study session summarizer. "
@@ -67,7 +70,14 @@ def _compress_turns(turns: list[dict], existing_summary: str) -> str:
             messages=[{"role": "user", "content": "\n".join(content_lines)}],
         )
         return response.content[0].text.strip()
-    except (anthropic.APIConnectionError, anthropic.RateLimitError, anthropic.APIStatusError):
+    except anthropic.APIConnectionError:
+        logger.exception("Claude API connection error during context compression")
+        return _plain_fallback(turns, existing_summary)
+    except anthropic.RateLimitError:
+        logger.exception("Claude API rate limit error during context compression")
+        return _plain_fallback(turns, existing_summary)
+    except anthropic.APIError:
+        logger.exception("Unexpected Claude API error during context compression")
         return _plain_fallback(turns, existing_summary)
 
 
