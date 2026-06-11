@@ -18,7 +18,12 @@ import os
 import sys
 
 # Make sure the project root is importable
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+ROOT = os.path.dirname(os.path.dirname(__file__))
+sys.path.insert(0, ROOT)
+
+# Load .env before anything else so MAIL_PASSWORD etc. are available
+from dotenv import load_dotenv
+load_dotenv(os.path.join(ROOT, ".env"))
 
 os.environ.setdefault("SECRET_KEY", "test-secret-key-not-for-production-use")
 os.environ.setdefault("ANTHROPIC_API_KEY", "sk-ant-test")
@@ -116,7 +121,7 @@ def render_all(app, recipient: str | None = None) -> None:
                 from app.email_service import _send
                 sent = _send(subject=subject, recipients=[recipient], html=html, text=f"Preview: {subject}")
                 status = "sent" if sent else "FAILED (check MAIL_ENABLED / MAIL_PASSWORD in .env)"
-                print(f"  [email]     {name} → {recipient}: {status}")
+                print(f"  [email]     {name} -> {recipient}: {status}")
 
     print()
     if not recipient:

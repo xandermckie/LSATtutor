@@ -41,7 +41,8 @@ class BaseConfig:
     MAIL_PORT = 587
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "contact.ratio.tutor@gmail.com")
-    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "")
+    # Strip spaces — Gmail App Passwords are displayed with spaces but sent without
+    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "").replace(" ", "")
     MAIL_DEFAULT_SENDER = ("Ratio LSAT Tutor", os.environ.get("MAIL_USERNAME", "contact.ratio.tutor@gmail.com"))
 
 
