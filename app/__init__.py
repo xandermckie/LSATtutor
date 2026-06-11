@@ -32,6 +32,7 @@ def create_app() -> Flask:
     from app.study_plan import study_plan_bp
     from app.quiz import quiz_bp
     from app.profile import profile_bp
+    from app.social import social_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(chat_bp)
@@ -39,43 +40,53 @@ def create_app() -> Flask:
     app.register_blueprint(study_plan_bp)
     app.register_blueprint(quiz_bp)
     app.register_blueprint(profile_bp)
+    app.register_blueprint(social_bp)
 
     from app.storage import StorageCorruptError, load_user_cached
 
     @app.context_processor
     def inject_ui_prefs():
-        """Inject per-user UI preference flags into all templates."""
+        """Inject per-user UI preference flags and social stats into all templates."""
+        from app.social.xp_engine import level_progress
+        from app.social.missions import get_or_refresh_missions
+
         mail_enabled = bool(app.config.get("MAIL_ENABLED"))
         email = session.get("email")
+
+        _defaults = {
+            "pomodoro_intro_dismissed": False,
+            "logged_in": False,
+            "display_name": "",
+            "mail_enabled": mail_enabled,
+            "streak_count": 0,
+            "xp_info": {"level": 1, "league": "Bronze", "progress": 0, "needed": 100, "pct": 0},
+            "missions": [],
+        }
+
         if not email:
-            return {
-                "pomodoro_intro_dismissed": False,
-                "logged_in": False,
-                "display_name": "",
-                "mail_enabled": mail_enabled,
-            }
+            return _defaults
+
         try:
             user = load_user_cached(email)
         except StorageCorruptError:
-            return {
-                "pomodoro_intro_dismissed": False,
-                "logged_in": True,
-                "display_name": email.split("@")[0],
-                "mail_enabled": mail_enabled,
-            }
+            return {**_defaults, "logged_in": True, "display_name": email.split("@")[0]}
+
         if user is None:
-            return {
-                "pomodoro_intro_dismissed": False,
-                "logged_in": True,
-                "display_name": email.split("@")[0],
-                "mail_enabled": mail_enabled,
-            }
+            return {**_defaults, "logged_in": True, "display_name": email.split("@")[0]}
+
         display_name = user.get("username") or email.split("@")[0]
+        from datetime import date as _date
+        today_str = _date.today().isoformat()
+        missions_list = user.get("missions", []) if user.get("missions_date") == today_str else []
+
         return {
             "pomodoro_intro_dismissed": bool(user.get("pomodoro_intro_dismissed_at")),
             "logged_in": True,
             "display_name": display_name,
             "mail_enabled": mail_enabled,
+            "streak_count": user.get("streak_count", 0),
+            "xp_info": level_progress(user.get("xp", 0)),
+            "missions": missions_list,
         }
 
     @app.route("/")

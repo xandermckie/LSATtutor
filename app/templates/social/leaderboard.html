@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Leaderboard | Ratio{% endblock %}
+
+{% block content %}
+<div class="page">
+  <h1 class="page__title">Leaderboard</h1>
+
+  {# ── My Stats Card ── #}
+  <div class="stat-card">
+    <div class="stat-card__col">
+      <span class="stat-card__label">Level</span>
+      <span class="stat-card__value">{{ xp_info.level }}</span>
+    </div>
+    <div class="stat-card__col">
+      <span class="stat-card__label">League</span>
+      <span class="stat-card__value">
+        <span class="league-badge league-badge--{{ xp_info.league | lower }}">{{ xp_info.league }}</span>
+      </span>
+    </div>
+    <div class="stat-card__col">
+      <span class="stat-card__label">Total XP</span>
+      <span class="stat-card__value">{{ user.get('xp', 0) | int }}</span>
+    </div>
+    <div class="stat-card__col">
+      <span class="stat-card__label">Global Rank</span>
+      <span class="stat-card__value">{% if my_rank %}#{{ my_rank }}{% else %}—{% endif %}</span>
+    </div>
+    <div class="stat-card__col">
+      <span class="stat-card__label">Streak</span>
+      <span class="stat-card__value streak-val">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>
+        {{ user.get('streak_count', 0) }}
+      </span>
+    </div>
+    <div class="stat-card__xp-bar-wrap" style="grid-column:1/-1;">
+      <div class="stat-card__xp-bar-label">
+        <span>{{ xp_info.progress }} / {{ xp_info.needed }} XP to Lv {{ xp_info.level + 1 }}</span>
+        <span>{{ xp_info.pct }}%</span>
+      </div>
+      <div class="xp-bar"><div class="xp-bar__fill" style="width:{{ xp_info.pct }}%"></div></div>
+    </div>
+  </div>
+
+  {# ── Friends Ranking ── #}
+  {% if friend_board %}
+  <h2 class="section-title">
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-.15em;margin-right:.35rem;" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Friends Ranking
+  </h2>
+  <div class="leaderboard-table">
+    {% for u in friend_board %}
+    <div class="lb-row {% if u.user_id == my_uid %}lb-row--me{% endif %}">
+      <span class="lb-rank">{{ loop.index }}</span>
+      <span class="lb-name">{{ u.username }}{% if u.user_id == my_uid %} <span class="lb-you">you</span>{% endif %}</span>
+      <span class="league-badge league-badge--{{ u.league | lower }}">{{ u.league }}</span>
+      <span class="lb-streak">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>
+        {{ u.streak }}
+      </span>
+      <span class="lb-xp">
+        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="color:var(--color-brown);" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        {{ u.xp }} XP &nbsp;·&nbsp; Lv {{ u.level }}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# ── Global Top 20 ── #}
+  <h2 class="section-title">
+    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-.15em;margin-right:.35rem;" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    Global Top 20
+  </h2>
+  <div class="leaderboard-table">
+    {% for u in global_top %}
+    <div class="lb-row {% if u.user_id == my_uid %}lb-row--me{% endif %}">
+      <span class="lb-rank {% if loop.index == 1 %}lb-rank--gold{% elif loop.index == 2 %}lb-rank--silver{% elif loop.index == 3 %}lb-rank--bronze{% endif %}">
+        {% if loop.index <= 3 %}
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        {% else %}
+        {{ loop.index }}
+        {% endif %}
+      </span>
+      <span class="lb-name">{{ u.username }}{% if u.user_id == my_uid %} <span class="lb-you">you</span>{% endif %}</span>
+      <span class="league-badge league-badge--{{ u.league | lower }}">{{ u.league }}</span>
+      <span class="lb-streak">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>
+        {{ u.streak }}
+      </span>
+      <span class="lb-xp">
+        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="color:var(--color-brown);" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        {{ u.xp }} XP &nbsp;·&nbsp; Lv {{ u.level }}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <p style="margin-top:1rem;font-size:.8rem;color:var(--color-text-light);">Leaderboard updates on each page visit.</p>
+</div>
+{% endblock %}

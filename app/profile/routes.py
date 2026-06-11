@@ -28,6 +28,7 @@ from app.auth.helpers import (
 )
 from app.extensions import limiter
 from app.profile import profile_bp
+from app.social.xp_engine import level_progress
 from app.storage import (
     StorageCorruptError,
     delete_session,
@@ -78,12 +79,18 @@ def profile():
     avatar_exists = os.path.isfile(
         _avatar_path(email, current_app.config["AVATARS_DIR"])
     )
+    xp_val = user.get("xp", 0)
     return render_template(
         "profile/profile.html",
         username=user.get("username", ""),
         email=email,
         agreed_at=user.get("agreed_to_terms_at"),
         avatar_exists=avatar_exists,
+        xp_info=level_progress(xp_val),
+        total_xp=xp_val,
+        streak_count=user.get("streak_count", 0),
+        longest_streak=user.get("streak_longest", 0),
+        total_questions=user.get("total_questions", 0),
     )
 
 

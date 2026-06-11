@@ -602,3 +602,205 @@ a:hover { color: var(--color-brown); }
   .about-strip__inner { grid-template-columns: 1fr 1fr; }
   .pomodoro { bottom: 1rem; right: 1rem; }
 }
+
+/* ===== Social — Nav pills ===== */
+.nav__streak {
+  display: inline-flex; align-items: center; gap: .25rem;
+  background: rgba(255,100,30,.18); color: #ff7a3a;
+  border-radius: 999px; padding: .22rem .65rem;
+  font-size: .78rem; font-weight: 700; letter-spacing: .01em;
+  white-space: nowrap;
+}
+.nav__xp {
+  display: inline-flex; align-items: center; gap: .28rem;
+  background: rgba(122,92,62,.22); color: var(--color-brown);
+  border-radius: 999px; padding: .22rem .7rem;
+  font-size: .78rem; font-weight: 700; text-decoration: none;
+  white-space: nowrap; transition: background .15s;
+}
+.nav__xp:hover { background: rgba(122,92,62,.36); color: var(--color-brown); text-decoration: none; }
+
+/* ===== Social — League badges ===== */
+.league-badge {
+  display: inline-block; padding: .15rem .55rem;
+  border-radius: 999px; font-size: .7rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+}
+.league-badge--bronze  { background: #f0e4d4; color: #7a5c3e; }
+.league-badge--silver  { background: #e8e8ec; color: #555567; }
+.league-badge--gold    { background: #fdf3d0; color: #8a6a00; }
+.league-badge--platinum{ background: #e0f2f4; color: #1a6070; }
+.league-badge--diamond { background: #eae6ff; color: #4a2fb0; }
+
+/* ===== Social — Stat card ===== */
+.stat-card {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 1rem; background: var(--color-surface);
+  border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+  padding: 1.5rem; margin-bottom: 1.5rem;
+}
+.stat-card__col { display: flex; flex-direction: column; gap: .3rem; }
+.stat-card__label {
+  font-size: .7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--color-text-muted);
+}
+.stat-card__value { font-family: var(--font-serif); font-size: 1.35rem; font-weight: 700; color: var(--color-text); }
+.stat-card__xp-bar-wrap { padding-top: .25rem; }
+.stat-card__xp-bar-label {
+  display: flex; justify-content: space-between;
+  font-size: .75rem; color: var(--color-text-muted); margin-bottom: .35rem;
+}
+.streak-val { color: #e05c1a; }
+
+/* ===== Social — XP bar ===== */
+.xp-bar {
+  height: 8px; background: var(--color-surface-alt);
+  border-radius: 999px; overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+.xp-bar__fill {
+  height: 100%; background: var(--color-brown);
+  border-radius: 999px; transition: width .4s ease;
+}
+
+/* ===== Social — Quiz XP toast ===== */
+.quiz-xp-toast {
+  display: inline-flex; align-items: center; gap: .3rem;
+  background: var(--color-brown-light); color: var(--color-brown);
+  border: 1px solid #d6bfa0; border-radius: var(--radius);
+  padding: .35rem .75rem; font-size: .82rem; font-weight: 600;
+  margin-top: .6rem;
+}
+
+/* ===== Social — Daily Missions ===== */
+.missions-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: .85rem; margin-bottom: 1.75rem;
+}
+.mission-card {
+  position: relative; display: flex; align-items: center; gap: .85rem;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: 1rem 1rem 1rem .9rem;
+  transition: border-color .15s;
+}
+.mission-card--done {
+  border-color: #86efac; background: var(--color-success-bg);
+}
+.mission-card__icon {
+  flex-shrink: 0; width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--color-surface-alt); border-radius: var(--radius);
+  color: var(--color-brown);
+}
+.mission-card--done .mission-card__icon {
+  background: #dcfce7; color: var(--color-success);
+}
+.mission-card__body { flex: 1; min-width: 0; }
+.mission-card__label { font-size: .85rem; font-weight: 500; margin-bottom: .35rem; color: var(--color-text); }
+.mission-card__bar-wrap {
+  height: 5px; background: var(--color-surface-alt);
+  border-radius: 999px; overflow: hidden; margin-bottom: .25rem;
+}
+.mission-card__bar {
+  height: 100%; background: var(--color-brown);
+  border-radius: 999px; transition: width .3s ease;
+}
+.mission-card--done .mission-card__bar { background: var(--color-success); }
+.mission-card__progress { font-size: .72rem; color: var(--color-text-light); }
+.mission-card__reward {
+  flex-shrink: 0; display: flex; align-items: center; gap: .2rem;
+  font-size: .78rem; font-weight: 700; color: var(--color-brown);
+}
+.mission-card__done-badge {
+  position: absolute; top: .55rem; right: .55rem;
+  width: 18px; height: 18px; background: var(--color-success);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  color: #fff;
+}
+
+/* ===== Social — Leaderboard ===== */
+.leaderboard-table { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1.75rem; }
+.lb-row {
+  display: flex; align-items: center; gap: .75rem;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius); padding: .65rem .9rem; font-size: .875rem;
+}
+.lb-row--me { border-color: var(--color-brown); background: var(--color-brown-light); }
+.lb-rank {
+  flex-shrink: 0; min-width: 26px; text-align: center;
+  font-weight: 700; font-size: .85rem; color: var(--color-text-muted);
+}
+.lb-rank--gold   { color: #c89b00; }
+.lb-rank--silver { color: #777; }
+.lb-rank--bronze { color: #9a6a3a; }
+.lb-name { flex: 1; font-weight: 600; }
+.lb-you {
+  font-size: .65rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; background: var(--color-brown);
+  color: #fff; border-radius: 4px; padding: .1rem .35rem; margin-left: .3rem;
+}
+.lb-streak {
+  display: flex; align-items: center; gap: .25rem;
+  color: #e05c1a; font-size: .8rem; font-weight: 600; flex-shrink: 0;
+}
+.lb-xp { font-size: .8rem; color: var(--color-text-muted); flex-shrink: 0; }
+
+/* ===== Social — Friends ===== */
+.friend-row {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .6rem 0; border-bottom: 1px solid var(--color-border);
+}
+.friend-row:last-child { border-bottom: none; }
+.friend-row__name { flex: 1; font-weight: 600; }
+
+.friends-list { display: flex; flex-direction: column; gap: .6rem; margin-bottom: 1.5rem; }
+.friend-card {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: 1rem 1.1rem;
+}
+.friend-card__info { flex: 1; min-width: 0; }
+.friend-card__name { font-weight: 600; font-size: .95rem; margin-bottom: .2rem; }
+.friend-card__stats { font-size: .8rem; color: var(--color-text-muted); display: flex; flex-wrap: wrap; gap: .2rem; align-items: center; }
+.friend-card__actions { display: flex; align-items: center; gap: .4rem; flex-shrink: 0; }
+
+/* ===== Social — Challenges ===== */
+.challenge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .75rem; margin-bottom: 1.75rem; }
+.challenge-card {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: 1.1rem;
+}
+.challenge-card--expired { opacity: .65; }
+.challenge-card__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; }
+.challenge-card__type { font-weight: 700; font-size: .85rem; color: var(--color-brown); }
+.challenge-card__time { font-size: .75rem; color: var(--color-text-light); }
+.challenge-card__vs { font-size: .85rem; margin-bottom: .5rem; color: var(--color-text-muted); }
+.challenge-card__score { font-size: .82rem; color: var(--color-text); }
+.challenge-card__my-score strong { color: var(--color-brown); }
+.challenge-card__status { font-size: .75rem; color: var(--color-text-light); margin-top: .4rem; font-style: italic; }
+
+.challenge-details > summary { list-style: none; display: inline-flex; align-items: center; gap: .35rem; }
+.challenge-details > summary::-webkit-details-marker { display: none; }
+.challenge-menu {
+  position: absolute; z-index: 10;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius); box-shadow: var(--shadow-md);
+  padding: .35rem 0; min-width: 160px; margin-top: .3rem;
+}
+.challenge-menu__item {
+  display: block; width: 100%; padding: .55rem 1rem;
+  background: none; border: none; text-align: left;
+  font-size: .875rem; font-family: var(--font-sans);
+  color: var(--color-text); cursor: pointer;
+}
+.challenge-menu__item:hover { background: var(--color-surface-alt); }
+.challenge-details { position: relative; }
+
+/* ===== Responsive — Social ===== */
+@media (max-width: 700px) {
+  .missions-grid { grid-template-columns: 1fr; }
+  .stat-card { grid-template-columns: repeat(3, 1fr); }
+  .nav__streak, .nav__xp { font-size: .72rem; padding: .2rem .5rem; }
+  .challenge-grid { grid-template-columns: 1fr; }
+  .friend-card { flex-direction: column; align-items: flex-start; }
+}

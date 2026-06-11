@@ -8,6 +8,8 @@ from app.analysis.weak_area_detector import get_daily_focus, get_ranked_weak_are
 from app.auth.helpers import force_logout_redirect, get_current_user, login_required
 from app.email_service import send_plan_email
 from app.extensions import limiter
+from app.social.missions import advance_missions, get_or_refresh_missions
+from app.social.xp_engine import ensure_social_fields
 from app.storage import StorageCorruptError, load_session, save_user
 from app.study_plan import study_plan_bp
 from app.study_plan.calendar_builder import build_ics
@@ -82,6 +84,16 @@ def plan():
         send_plan_email(email, generated, target_date)
 
         return redirect(url_for("study_plan.plan"))
+
+    # Advance "visit study plan" mission on GET
+    if request.method == "GET":
+        try:
+            user = ensure_social_fields(user, email)
+            user = get_or_refresh_missions(user, email)
+            user, _ = advance_missions(user, "plan_today")
+            save_user(email, user)
+        except Exception:
+            pass
 
     daily_focus = get_daily_focus(session_data)
     return render_template(

@@ -14,7 +14,9 @@ from app.chat.context_manager import maybe_compress
 from app.chat.prompt_builder import build_messages
 from app.email_service import send_daily_reminder
 from app.extensions import limiter
-from app.storage import StorageCorruptError, invalidate_user_cache, load_session, load_user_cached, save_session, save_user
+from app.social.missions import advance_missions, get_or_refresh_missions
+from app.social.xp_engine import award_xp, ensure_social_fields
+from app.storage import StorageCorruptError, invalidate_user_cache, load_session, load_user, load_user_cached, save_session, save_user
 
 _META_RE = re.compile(
     r"\nRATIO_META type=(\S+) result=(correct|incorrect|neutral)\s*$",
@@ -181,6 +183,17 @@ def send_message():
     session_data["turns"].append({"role": "assistant", "content": clean_response})
     remaining = _increment_quota(session_data)
     save_session(email, session_data)
+
+    # Award XP for chatting (capped at 3 messages/day earning XP via missions)
+    try:
+        u = load_user_cached(email)
+        u = ensure_social_fields(u, email)
+        u = get_or_refresh_missions(u, email)
+        u = award_xp(u, 5)
+        u, _ = advance_missions(u, "chat_today")
+        save_user(email, u)
+    except Exception:
+        pass
 
     return jsonify({"response": clean_response, "remaining": remaining})
 

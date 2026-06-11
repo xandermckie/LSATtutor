@@ -33,6 +33,23 @@
         <a href="{{ url_for('analysis.dashboard') }}">Analysis</a>
         <a href="{{ url_for('study_plan.plan') }}">Study Plan</a>
         <a href="{{ url_for('quiz.quiz') }}">Quiz</a>
+        <a href="{{ url_for('social.leaderboard') }}">Leaderboard</a>
+        <a href="{{ url_for('social.friends') }}">Friends</a>
+
+        {# Streak pill #}
+        {% if streak_count > 0 %}
+        <span class="nav__streak" title="{{ streak_count }}-day streak">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 .67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>
+          {{ streak_count }}
+        </span>
+        {% endif %}
+
+        {# XP pill #}
+        <a class="nav__xp" href="{{ url_for('social.leaderboard') }}" title="Level {{ xp_info.level }} · {{ xp_info.league }}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Lv {{ xp_info.level }} · {{ xp_info.league }}
+        </a>
+
         <a href="{{ url_for('profile.profile') }}">Profile</a>
         <a href="{{ url_for('auth.logout') }}">Log Out</a>
       {% else %}

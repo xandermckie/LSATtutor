@@ -4,7 +4,7 @@ from flask import g
 
 from app.storage.errors import StorageCorruptError
 from app.storage.session_store import delete_session, load_session, save_session
-from app.storage.user_store import delete_user, load_user, save_user, user_exists
+from app.storage.user_store import delete_user, load_all_users, load_user, save_user, user_exists
 
 
 def load_user_cached(email: str) -> dict | None:
@@ -41,6 +41,7 @@ def invalidate_user_cache(email: str) -> None:
 __all__ = [
     "StorageCorruptError",
     "load_user",
+    "load_all_users",
     "load_user_cached",
     "invalidate_user_cache",
     "save_user",

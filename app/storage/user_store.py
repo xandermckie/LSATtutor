@@ -73,3 +73,30 @@ def delete_user(email: str) -> None:
 def user_exists(email: str) -> bool:
     """Return True if an account file exists for the given email."""
     return os.path.exists(_user_path(email))
+
+
+def load_all_users() -> list[dict]:
+    """Decrypt and return all user records from disk.
+
+    Skips corrupt or unreadable files silently.
+
+    Returns:
+        List of user dicts (order is arbitrary).
+    """
+    users_dir = current_app.config["USERS_DIR"]
+    results = []
+    try:
+        filenames = os.listdir(users_dir)
+    except OSError:
+        return results
+    for fname in filenames:
+        if not fname.endswith(".enc"):
+            continue
+        path = os.path.join(users_dir, fname)
+        try:
+            with open(path, "rb") as f:
+                data = decrypt_data(f.read())
+            results.append(data)
+        except Exception:
+            logger.debug("Skipping unreadable user file: %s", fname)
+    return results
