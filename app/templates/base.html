@@ -28,7 +28,7 @@
     </button>
 
     <div class="nav__links" id="navLinks">
-      {% if session.get('email') %}
+      {% if logged_in %}
         <a href="{{ url_for('chat.chat') }}">Tutor</a>
         <a href="{{ url_for('analysis.dashboard') }}">Analysis</a>
         <a href="{{ url_for('study_plan.plan') }}">Study Plan</a>
@@ -88,7 +88,7 @@
 
   <script>
     window.__ratioUser = {
-      loggedIn: {{ 'true' if session.get('email') else 'false' }},
+      loggedIn: {{ 'true' if logged_in else 'false' }},
       pomodoroIntroDismissed: {{ 'true' if pomodoro_intro_dismissed else 'false' }}
     };
   </script>

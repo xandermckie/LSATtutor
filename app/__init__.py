@@ -105,6 +105,12 @@ def create_app() -> Flask:
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=()"
+        # Prevent browsers from serving a stale cached page from a previous
+        # login session. The nav renders server-side and varies by cookie, so
+        # caching would cause the wrong links to appear on first visit.
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Vary"] = "Cookie"
         return response
 
     @app.errorhandler(413)
