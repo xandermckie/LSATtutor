@@ -2,8 +2,9 @@
 
 import logging
 from datetime import datetime, timezone
+from threading import Thread
 
-from flask import redirect, render_template, request, session, url_for
+from flask import current_app, redirect, render_template, request, session, url_for
 
 logger = logging.getLogger(__name__)
 
@@ -42,13 +43,20 @@ def register():
                 new_user = ensure_social_fields(new_user, email)
                 save_user(email, new_user)
                 session["email"] = email
-                # Best-effort welcome email — never blocks registration
-                try:
-                    from app.email_service import send_welcome
-                    display_name = new_user.get("username") or email.split("@")[0]
-                    send_welcome(email, display_name)
-                except Exception as exc:
-                    logger.warning("Welcome email failed for %s: %s", email, exc)
+                # Fire welcome email in a background thread so SMTP latency
+                # never blocks the registration response.
+                _app = current_app._get_current_object()
+                _email = email
+                _name = new_user.get("username") or email.split("@")[0]
+                def _send_welcome():
+                    """Send welcome email with an app context."""
+                    with _app.app_context():
+                        try:
+                            from app.email_service import send_welcome
+                            send_welcome(_email, _name)
+                        except Exception as exc:
+                            logger.warning("Welcome email failed for %s: %s", _email, exc)
+                Thread(target=_send_welcome, daemon=True).start()
                 return redirect(url_for("chat.chat"))
 
     return render_template("auth/register.html", errors=errors)

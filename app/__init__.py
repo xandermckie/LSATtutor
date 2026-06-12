@@ -137,7 +137,10 @@ def create_app() -> Flask:
         if request.path in ("/chat", "/history") or request.accept_mimetypes.best == "application/json":
             return jsonify({"error": message}), 500
         flash(message, "error")
-        return redirect(url_for("index")), 500
+        # Send the user back to the page they were on if possible, otherwise home.
+        if request.path.startswith("/study-plan"):
+            return redirect(url_for("study_plan.plan"))
+        return redirect(url_for("index"))
 
     return app
 

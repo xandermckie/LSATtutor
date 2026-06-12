@@ -37,13 +37,15 @@ class BaseConfig:
 
     # Email — Gmail SMTP via Flask-Mail
     MAIL_ENABLED = os.environ.get("MAIL_ENABLED", "false").lower() == "true"
-    MAIL_SERVER = "smtp.gmail.com"
-    MAIL_PORT = 587
-    MAIL_USE_TLS = True
+    MAIL_SERVER = os.environ.get("MAIL_SERVER", "smtp.gmail.com")
+    MAIL_PORT = int(os.environ.get("MAIL_PORT", "587"))
+    MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "true").lower() == "true"
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME", "contact.ratio.tutor@gmail.com")
     # Strip spaces — Gmail App Passwords are displayed with spaces but sent without
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD", "").replace(" ", "")
     MAIL_DEFAULT_SENDER = ("Ratio LSAT Tutor", os.environ.get("MAIL_USERNAME", "contact.ratio.tutor@gmail.com"))
+    # Prevent SMTP hangs — 15-second connect+read timeout per operation
+    MAIL_TIMEOUT = 15
 
 
 class DevelopmentConfig(BaseConfig):

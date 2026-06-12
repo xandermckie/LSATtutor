@@ -19,7 +19,7 @@
 
   {% if not has_plan %}
     {# No plan yet — show the generate form #}
-    <form method="POST" action="{{ url_for('study_plan.plan') }}" class="plan-form">
+    <form id="generateForm" class="plan-form" data-action="{{ url_for('study_plan.generate') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="is_fix" value="0">
       <label class="form-label" for="target_date">Exam Date (optional)</label>
@@ -30,9 +30,13 @@
         name="target_date"
         value="{{ target_date or '' }}"
       >
-      <button class="btn btn--primary" type="submit">Generate Plan</button>
+      <button class="btn btn--primary" type="submit" id="generateBtn">Generate Plan</button>
     </form>
-    <p class="page__empty">Click "Generate Plan" to create a personalized study schedule based on your weak areas.</p>
+    <p class="page__empty" id="generateHint">Click "Generate Plan" to create a personalized study schedule based on your weak areas.</p>
+    <div id="streamContainer" style="display:none;">
+      <p class="plan-fix__label" id="streamStatus">Generating your plan…</p>
+      <div class="plan-output" id="streamOutput" style="white-space:pre-wrap;min-height:4rem;"></div>
+    </div>
 
   {% else %}
     {# Plan exists — show it; raw markdown parsed client-side #}
@@ -90,7 +94,7 @@
           <span class="badge badge--pro" style="vertical-align:middle;margin-right:.4rem;">PRO</span>
           Regenerate or update your plan at any time.
         </p>
-        <form method="POST" action="{{ url_for('study_plan.plan') }}" class="plan-form">
+        <form id="fixForm" class="plan-form" data-action="{{ url_for('study_plan.generate') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="is_fix" value="1">
           <label class="form-label" for="target_date_fix">Exam Date</label>
@@ -103,11 +107,15 @@
           >
           <button class="btn btn--primary" type="submit">Regenerate Plan</button>
         </form>
+        <div id="fixStreamContainer" style="display:none;">
+          <p class="plan-fix__label" id="fixStreamStatus">Generating your plan…</p>
+          <div class="plan-output" id="fixStreamOutput" style="white-space:pre-wrap;min-height:4rem;"></div>
+        </div>
       </div>
     {% elif not fix_used %}
       <div class="plan-fix">
         <p class="plan-fix__label">Need to correct your exam date? You have <strong>1 correction remaining</strong>.</p>
-        <form method="POST" action="{{ url_for('study_plan.plan') }}" class="plan-form">
+        <form id="fixForm" class="plan-form" data-action="{{ url_for('study_plan.generate') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="is_fix" value="1">
           <label class="form-label" for="target_date_fix">New Exam Date</label>
@@ -120,6 +128,10 @@
           >
           <button class="btn btn--ghost" type="submit">Correct my exam date (1 use remaining)</button>
         </form>
+        <div id="fixStreamContainer" style="display:none;">
+          <p class="plan-fix__label" id="fixStreamStatus">Generating your plan…</p>
+          <div class="plan-output" id="fixStreamOutput" style="white-space:pre-wrap;min-height:4rem;"></div>
+        </div>
       </div>
     {% else %}
       <p class="plan-fix__locked">
@@ -135,6 +147,7 @@
 <script src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js" integrity="sha384-948ahk4ZmxYVYOc+rxN1H2gM1EJ2Duhp7uHtZ4WSLkV4Vtx5MUqnV+l7u9B+jFv+" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.8/dist/purify.min.js" integrity="sha384-jrsBdrv4eDpEYIq32u13DPbvB6tRmqIDnA6UlgFBoexpetaiWi7g/VbfMEL1WVen" crossorigin="anonymous"></script>
 <script>
+  // Render stored plan from server.
   (function () {
     var raw = document.getElementById('plan-raw');
     var out = document.getElementById('plan-output');
@@ -142,6 +155,95 @@
       out.innerHTML = DOMPurify.sanitize(marked.parse(raw.textContent));
     }
   })();
+
+  // Attach streaming handler to a plan generation / fix form.
+  function attachStreamForm(formId, statusId, outputId, containerId, hintId) {
+    var form = document.getElementById(formId);
+    if (!form) return;
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      var action = form.dataset.action;
+      var formData = new FormData(form);
+      var csrfToken = formData.get('csrf_token');
+
+      // Show streaming UI, hide the hint paragraph.
+      var container = document.getElementById(containerId);
+      var statusEl = document.getElementById(statusId);
+      var outputEl = document.getElementById(outputId);
+      if (container) container.style.display = '';
+      if (hintId) { var hint = document.getElementById(hintId); if (hint) hint.style.display = 'none'; }
+
+      // Disable the submit button.
+      var btn = form.querySelector('[type="submit"]');
+      if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+
+      var accumulated = '';
+
+      fetch(action, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken },
+        body: formData,
+      }).then(function (response) {
+        if (!response.ok) {
+          throw new Error('Server returned ' + response.status);
+        }
+        var reader = response.body.getReader();
+        var decoder = new TextDecoder();
+        var buffer = '';
+        var isErrorEvent = false;
+
+        function read() {
+          reader.read().then(function (result) {
+            if (result.done) return;
+            buffer += decoder.decode(result.value, { stream: true });
+
+            // Parse SSE lines out of the buffer.
+            var lines = buffer.split('\n');
+            buffer = lines.pop(); // keep incomplete last line
+
+            lines.forEach(function (line) {
+              if (line.startsWith('event: error')) {
+                isErrorEvent = true;
+              } else if (line.startsWith('data: ')) {
+                var payload = line.slice(6);
+                if (isErrorEvent) {
+                  isErrorEvent = false;
+                  if (outputEl) outputEl.textContent = '';
+                  if (statusEl) statusEl.textContent = payload;
+                  if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || 'Generate Plan'; }
+                } else if (payload === '[DONE]') {
+                  if (statusEl) statusEl.textContent = 'Plan saved! Reloading…';
+                  setTimeout(function () { window.location.reload(); }, 800);
+                } else {
+                  try {
+                    accumulated += JSON.parse(payload);
+                    if (outputEl) outputEl.textContent = accumulated;
+                  } catch (_) { /* ignore malformed chunk */ }
+                }
+              } else if (line === '') {
+                isErrorEvent = false; // reset between events
+              }
+            });
+
+            read();
+          }).catch(function (err) {
+            if (statusEl) statusEl.textContent = 'Connection lost. Please try again.';
+            if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || 'Generate Plan'; }
+          });
+        }
+        read();
+      }).catch(function (err) {
+        if (statusEl) statusEl.textContent = 'Failed to start generation. Please try again.';
+        if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || 'Generate Plan'; }
+      });
+    });
+  }
+
+  // Wire up the initial generate form (shown when no plan exists).
+  attachStreamForm('generateForm', 'streamStatus', 'streamOutput', 'streamContainer', 'generateHint');
+  // Wire up the fix / regenerate form (shown when plan exists).
+  attachStreamForm('fixForm', 'fixStreamStatus', 'fixStreamOutput', 'fixStreamContainer', null);
 
   // Build Google Calendar link for the next chosen study day.
   (function () {
