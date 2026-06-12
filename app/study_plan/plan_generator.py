@@ -35,29 +35,21 @@ def _build_prompt(weak_areas: list[tuple[str, int]], target_date: str | None) ->
     )
     date_text = f"Target exam date: {target_date}" if target_date else "No exam date set."
     return (
-        f"Create a focused LSAT study plan for a student using the Ratio LSAT Tutor app.\n\n"
+        f"Create a concise LSAT study plan for a student using the Ratio app.\n\n"
         f"{date_text}\n\nWeak areas:\n{area_text}\n\n"
-        "Ratio has these built-in tools the student should use every session:\n"
-        "- **Quiz** (/quiz): Timed practice questions covering Weaken, Strengthen, Assumption, "
-        "Flaw, Inference, Main Point, Parallel Reasoning, Principle, Resolve, and Reading "
-        "Comprehension. Each answer gives immediate feedback and a full explanation.\n"
-        "- **AI Tutor Chat** (/chat): Ask Lex (the AI tutor) to explain any concept, walk "
-        "through a question type step-by-step, or review a specific reasoning pattern.\n"
-        "- **Weak Area Dashboard** (/analysis): Shows which question types need the most work "
-        "based on quiz history. Check it at the start of each week to reprioritize.\n"
-        "- **Pomodoro Timer** (built into every page): 25-minute focus blocks with 5-minute "
-        "breaks. Use it for all study sessions.\n\n"
-        "Rules for writing the plan:\n"
-        "1. Every daily task MUST include at least one Ratio activity (Quiz, Chat, or Dashboard). "
-        "Name the specific tool, e.g. 'Do 10 Ratio Quiz questions focused on Weaken' or "
-        "'Ask the Ratio tutor to explain Flaw question patterns'.\n"
-        "2. External resources (books, prep tests, etc.) are optional supplements, never the "
-        "primary activity for a day.\n"
-        "3. Prioritize the student's weak areas in the first half of the plan.\n\n"
-        "Produce a week-by-week plan (up to 8 weeks). For each week include: a theme, "
-        "Monday–Sunday daily tasks (30–90 min each using the Pomodoro timer), a mid-week "
-        "check-in goal (check the Weak Area Dashboard), and a weekend review exercise. "
-        "Format as markdown with week headers."
+        "Ratio tools available every session:\n"
+        "- Quiz (/quiz): practice questions with instant feedback\n"
+        "- Chat (/chat): AI tutor for concept help\n"
+        "- Dashboard (/analysis): weak area tracker\n"
+        "- Pomodoro timer: built into every page\n\n"
+        "Write a week-by-week plan up to 6 weeks. Keep it tight:\n"
+        "- One sentence per day (Mon–Sun). Every day must name a Ratio tool "
+        "(e.g. '10 Quiz questions on Weaken' or 'Chat: ask tutor to explain Flaw patterns').\n"
+        "- Each week: one-line theme, 7 daily tasks, one mid-week dashboard check, "
+        "one weekend review task.\n"
+        "- Prioritize weak areas first. No lengthy explanations.\n"
+        "- Format: markdown week headers (## Week 1: ...), days as a bullet list.\n"
+        "Be concise — the whole plan must fit in one response."
     )
 
 
@@ -70,7 +62,7 @@ def stream_study_plan(weak_areas: list[tuple[str, int]], target_date: str | None
     client = _get_plan_client()
     with client.messages.stream(
         model="claude-sonnet-4-6",
-        max_tokens=3500,
+        max_tokens=4000,
         messages=[{"role": "user", "content": prompt}],
     ) as stream:
         yield from stream.text_stream
