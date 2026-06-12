@@ -245,9 +245,22 @@ def send_reminder():
         flash("You do not have a study plan yet. Generate one first.")
         return redirect(url_for("study_plan.plan"))
 
-    sent = send_plan_email(email, plan_text, exam_date)
-    if sent:
-        flash("Study plan sent to your email.")
-    else:
+    from app.extensions import mail as _mail
+    if not current_app.config.get("MAIL_ENABLED") or not current_app.config.get("MAIL_PASSWORD"):
         flash("Email is not configured. Ask the site admin to set up MAIL_PASSWORD in the environment.")
+        return redirect(url_for("study_plan.plan"))
+
+    _app = current_app._get_current_object()
+    _plan = plan_text
+    _date = exam_date
+    _email = email
+    def _send():
+        with _app.app_context():
+            try:
+                send_plan_email(_email, _plan, _date)
+            except Exception as exc:
+                logger.warning("send_reminder email failed for %s: %s", _email, exc)
+    Thread(target=_send, daemon=True).start()
+
+    flash("Study plan sent to your email.")
     return redirect(url_for("study_plan.plan"))
