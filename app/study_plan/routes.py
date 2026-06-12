@@ -3,11 +3,12 @@
 import json
 import logging
 from datetime import date
+from threading import Thread
 
 logger = logging.getLogger(__name__)
 
 import anthropic
-from flask import Response, flash, make_response, redirect, render_template, request, session, stream_with_context, url_for
+from flask import Response, current_app, flash, make_response, redirect, render_template, request, session, stream_with_context, url_for
 
 from app.analysis.weak_area_detector import get_daily_focus, get_ranked_weak_areas
 from app.auth.helpers import force_logout_redirect, get_current_user, login_required
@@ -15,7 +16,7 @@ from app.email_service import send_plan_email
 from app.extensions import limiter
 from app.social.missions import advance_missions, get_or_refresh_missions
 from app.social.xp_engine import ensure_social_fields
-from app.storage import StorageCorruptError, load_session, save_user
+from app.storage import StorageCorruptError, load_session, load_user, save_user
 from app.study_plan import study_plan_bp
 from app.study_plan.calendar_builder import build_ics
 from app.study_plan.plan_generator import generate_study_plan, stream_study_plan
@@ -150,22 +151,34 @@ def generate():
             yield "event: error\ndata: Could not generate your study plan. Please try again.\n\n"
             return
 
-        # Save the completed plan.
+        # Save the completed plan using a fresh disk read so we never
+        # overwrite fields written by a concurrent request.
         try:
             full_plan = "".join(chunks)
-            current_user, _ = get_current_user()
-            if current_user is not None:
-                current_user["study_plan_content"] = full_plan
-                current_user["study_plan_exam_date"] = target_date
-                if not is_pro:
-                    current_user["study_plan_fix_used"] = bool(is_fix)
-                save_user(email, current_user)
-                send_plan_email(email, full_plan, target_date)
+            fresh_user = load_user(email)
+            if fresh_user is None:
+                raise RuntimeError("User record not found when saving plan.")
+            fresh_user["study_plan_content"] = full_plan
+            fresh_user["study_plan_exam_date"] = target_date
+            if not is_pro:
+                fresh_user["study_plan_fix_used"] = bool(is_fix)
+            save_user(email, fresh_user)
         except Exception as exc:
             logger.warning("Failed to save study plan for %s: %s", email, exc)
-            # Plan was streamed successfully — just couldn't persist. Signal client.
-            yield "event: error\ndata: Plan was generated but could not be saved. Please copy it and try again.\n\n"
+            yield "event: error\ndata: Plan was generated but could not be saved. Please try again.\n\n"
             return
+
+        # Fire email in background so SMTP latency never blocks the response.
+        _app = current_app._get_current_object()
+        _plan = full_plan
+        _date = target_date
+        def _send():
+            with _app.app_context():
+                try:
+                    send_plan_email(email, _plan, _date)
+                except Exception as exc:
+                    logger.warning("Plan email failed for %s: %s", email, exc)
+        Thread(target=_send, daemon=True).start()
 
         yield "data: [DONE]\n\n"
 

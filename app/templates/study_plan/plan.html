@@ -40,7 +40,7 @@
 
   {% else %}
     {# Plan exists — show it; raw markdown parsed client-side #}
-    <script type="text/plain" id="plan-raw">{{ generated_plan }}</script>
+    <script id="plan-raw" type="application/json">{{ generated_plan | tojson }}</script>
     <div class="plan-output" id="plan-output"></div>
 
     {# Calendar export #}
@@ -149,10 +149,15 @@
 <script>
   // Render stored plan from server.
   (function () {
-    var raw = document.getElementById('plan-raw');
+    var el = document.getElementById('plan-raw');
     var out = document.getElementById('plan-output');
-    if (raw && out && typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
-      out.innerHTML = DOMPurify.sanitize(marked.parse(raw.textContent));
+    if (el && out && typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+      try {
+        var md = JSON.parse(el.textContent);
+        out.innerHTML = DOMPurify.sanitize(marked.parse(md));
+      } catch (e) {
+        out.textContent = el.textContent;
+      }
     }
   })();
 
